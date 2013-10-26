@@ -9,10 +9,12 @@
 # This work is provided by Orson Peters "as is" and any express or implied
 # warranties are disclaimed. Orson Peters is not liable for any damage
 # arising in any way out of the use of this work.
+#
+# Bindings updated to GLFW 3 by Adam Griffiths.
 # --------------------------------------------------------------------------
 
 
-__doc__ = """Python bindings for glfw 2.7.5 using ctypes.
+__doc__ = """Python bindings for glfw 3 using ctypes.
 
 These bindings are a thin layer over the raw ctypes bindings to the GLFW shared
 library. No ctypes code is needed by the user, everything has a pure Python
@@ -22,12 +24,6 @@ Everything works as described in the GLFW reference manual, with a few changes:
 
  * All glfwFooBar functions should be accessed like glfw.FooBar. All
    GLFW_FOO_BAR constants should be accessed like glfw.FOO_BAR.
- * The threading and image loading functions have been removed from the API. The
-   same goes for related defines, constants, etc. This was done because they are
-   a deprecated featureset from the GLFW library, removed in version 3.0. On top
-   of that, the threading is not very useful for Python, even potentially
-   dangerous with the GIL. The image loading is hardly useful either, because it
-   only loads TARGA files, and better image loading options exist for Python.
  * The functions glfwGetTime, glfwSetTime and glfwSleep are removed because they
    are unnecesarry in Python (use the `time` module).
  * The function glfwGetProcAddress returns the memory location as an integer.
@@ -45,7 +41,7 @@ Everything works as described in the GLFW reference manual, with a few changes:
  * Type/value checking has been added to some functions, for example passing a
    negative size into glfw.OpenWindow raises a ValueError, and passing a list
    into glfw.SetWindowTitle results in a TypeError being raised. This is done
-   because GLFW 2.7.5 has no error messages, and thus this will ease debugging.
+   because GLFW has no error messages, and thus this will ease debugging.
  * glfw.Init does not return an integer indicating the status, instead it
    always returns None and raises an InitError if the initialization failed. The
    same goes for glfw.OpenWindow, except it raises OpeningWindowError.
@@ -61,9 +57,10 @@ Everything works as described in the GLFW reference manual, with a few changes:
    situation to debug.
  * The callback set with glfw.SetCharCallback always gets called with a
    one-character unicode string and never with an integer value.
- * glfw.GetJoystickPos and glfw.GetJoystickButtons only take one parameter, the
+ * glfw.GetJoystickAxes and glfw.GetJoystickButtons only take one parameter, the
    joystick id, and return a list of available data about respectively the axes
    positions and button states.
+ * The UserPointer functions are not included.
    
 Other than the above changes everything works exactly as in the GLFW reference
 manual.
@@ -91,21 +88,21 @@ if sys.version_info.major == 2 and sys.version_info.minor < 6:
         """Returns True if obj is an int, else False."""
         
         return isinstance(obj, int)
-    
-    
+
+
     def _is_real(obj):
         """Returns True if obj is an int or float, else False."""
         
         return isinstance(obj, int) or isinstance(obj, float)
-    
-    
+
+
     def _is_callable_nargs(obj, nargs):
         """Returns True if obj is a callable taking nargs positional arguments, False otherwise.
         
         For builtins only the check for callable is made, since builtins can't be inspected for
         the amount of arguments they take.
         """
-        
+
         try:
             _inspect.getcallargs(obj, *[None for _ in range(nargs)])
         except TypeError:
@@ -113,40 +110,40 @@ if sys.version_info.major == 2 and sys.version_info.minor < 6:
             # however we can do a simple "is callable" check
             if not (_inspect.isbuiltin(obj) and callable(obj)):
                 return False
-                
+
         return True
-        
+
 else:
     import numbers as _numbers
     import collections as _collections
-    
+
     def _is_int(obj):
         """Returns True if obj has numbers.Integral as ABC, else False."""
         
         return isinstance(obj, _numbers.Integral)
-        
-        
+
+
     def _is_real(obj):
         """Returns True if obj has numbers.Real as ABC, else False."""
         
         return isinstance(obj, _numbers.Real)
-        
-        
+
+
     def _is_callable_nargs(obj, nargs):
         """Returns True if obj is a callable taking nargs positional arguments, False otherwise.
         
         For builtins only the check for callable is made, since builtins can't be inspected for
         the amount of arguments they take.
         """
-        
+
         try:
             _inspect.getcallargs(obj, *[None for _ in range(nargs)])
         except TypeError:
             if not (_inspect.isbuiltin(obj) and isinstance(obj, _collections.Callable)):
                 return False
-                
+
         return True
-        
+
 del sys
 
 
@@ -155,12 +152,13 @@ del sys
 ##################
 
 # version info
-VERSION_MAJOR = 2
-VERSION_MINOR = 7
-VERSION_REVISION = 5
+VERSION_MAJOR = 3
+VERSION_MINOR = 0
+VERSION_REVISION = 3
 
 GLFW_RELEASE = 0
 GLFW_PRESS = 1
+GLFW_REPEAT = 2
 
 # keyboard key definitions: 8-bit ISO-8859-1 (Latin 1) encoding is used
 # for printable keys (such as A-Z, 0-9 etc), and values above 256
@@ -169,77 +167,90 @@ KEY_UNKNOWN = -1
 # KEY_SPACE = 32 # this has been ommited to make all keycodes outside of latin 1
                  # range so we can safely translate all keys < 256 with chr()
                  # without having to worry about users checking for KEY_SPACE
-KEY_SPECIAL = 256
-KEY_ESC = KEY_SPECIAL + 1
-KEY_F1 = KEY_SPECIAL + 2
-KEY_F2 = KEY_SPECIAL + 3
-KEY_F3 = KEY_SPECIAL + 4
-KEY_F4 = KEY_SPECIAL + 5
-KEY_F5 = KEY_SPECIAL + 6
-KEY_F6 = KEY_SPECIAL + 7
-KEY_F7 = KEY_SPECIAL + 8
-KEY_F8 = KEY_SPECIAL + 9
-KEY_F9 = KEY_SPECIAL + 10
-KEY_F10 = KEY_SPECIAL + 11
-KEY_F11 = KEY_SPECIAL + 12
-KEY_F12 = KEY_SPECIAL + 13
-KEY_F13 = KEY_SPECIAL + 14
-KEY_F14 = KEY_SPECIAL + 15
-KEY_F15 = KEY_SPECIAL + 16
-KEY_F16 = KEY_SPECIAL + 17
-KEY_F17 = KEY_SPECIAL + 18
-KEY_F18 = KEY_SPECIAL + 19
-KEY_F19 = KEY_SPECIAL + 20
-KEY_F20 = KEY_SPECIAL + 21
-KEY_F21 = KEY_SPECIAL + 22
-KEY_F22 = KEY_SPECIAL + 23
-KEY_F23 = KEY_SPECIAL + 24
-KEY_F24 = KEY_SPECIAL + 25
-KEY_F25 = KEY_SPECIAL + 26
-KEY_UP = KEY_SPECIAL + 27
-KEY_DOWN = KEY_SPECIAL + 28
-KEY_LEFT = KEY_SPECIAL + 29
-KEY_RIGHT = KEY_SPECIAL + 30
-KEY_LSHIFT = KEY_SPECIAL + 31
-KEY_RSHIFT = KEY_SPECIAL + 32
-KEY_LCTRL = KEY_SPECIAL + 33
-KEY_RCTRL = KEY_SPECIAL + 34
-KEY_LALT = KEY_SPECIAL + 35
-KEY_RALT = KEY_SPECIAL + 36
-KEY_TAB = KEY_SPECIAL + 37
-KEY_ENTER = KEY_SPECIAL + 38
-KEY_BACKSPACE = KEY_SPECIAL + 39
-KEY_INSERT = KEY_SPECIAL + 40
-KEY_DEL = KEY_SPECIAL + 41
-KEY_PAGEUP = KEY_SPECIAL + 42
-KEY_PAGEDOWN = KEY_SPECIAL + 43
-KEY_HOME = KEY_SPECIAL + 44
-KEY_END = KEY_SPECIAL + 45
-KEY_KP_0 = KEY_SPECIAL + 46
-KEY_KP_1 = KEY_SPECIAL + 47
-KEY_KP_2 = KEY_SPECIAL + 48
-KEY_KP_3 = KEY_SPECIAL + 49
-KEY_KP_4 = KEY_SPECIAL + 50
-KEY_KP_5 = KEY_SPECIAL + 51
-KEY_KP_6 = KEY_SPECIAL + 52
-KEY_KP_7 = KEY_SPECIAL + 53
-KEY_KP_8 = KEY_SPECIAL + 54
-KEY_KP_9 = KEY_SPECIAL + 55
-KEY_KP_DIVIDE = KEY_SPECIAL + 56
-KEY_KP_MULTIPLY = KEY_SPECIAL + 57
-KEY_KP_SUBTRACT = KEY_SPECIAL + 58
-KEY_KP_ADD = KEY_SPECIAL + 59
-KEY_KP_DECIMAL = KEY_SPECIAL + 60
-KEY_KP_EQUAL = KEY_SPECIAL + 61
-KEY_KP_ENTER = KEY_SPECIAL + 62
-KEY_KP_NUM_LOCK = KEY_SPECIAL + 63
-KEY_CAPS_LOCK = KEY_SPECIAL + 64
-KEY_SCROLL_LOCK = KEY_SPECIAL + 65
-KEY_PAUSE = KEY_SPECIAL + 66
-KEY_LSUPER = KEY_SPECIAL + 67
-KEY_RSUPER = KEY_SPECIAL + 68
-KEY_MENU = KEY_SPECIAL + 69
+
+# TODO: there are now new definitions
+# ie GLFW_KEY_LEFT_BRACKET
+# do we need to handle these a different way?
+
+# function keys
+KEY_ESCAPE = 256
+KEY_ENTER = 257
+KEY_TAB = 258
+KEY_BACKSPACE = 259
+KEY_INSERT = 260
+KEY_DELETE = 261
+KEY_RIGHT = 262
+KEY_LEFT = 263
+KEY_DOWN = 264
+KEY_UP = 265
+KEY_PAGE_UP = 266
+KEY_PAGE_DOWN = 267
+KEY_HOME = 268
+KEY_END = 269
+KEY_CAPS_LOCK = 280
+KEY_SCROLL_LOCK = 281
+KEY_NUM_LOCK = 282
+KEY_PRINT_SCREEN = 283
+KEY_PAUSE = 284
+KEY_F1 = 290
+KEY_F2 = 291
+KEY_F3 = 292
+KEY_F4 = 293
+KEY_F5 = 294
+KEY_F6 = 295
+KEY_F7 = 296
+KEY_F8 = 297
+KEY_F9 = 298
+KEY_F10 = 299
+KEY_F11 = 300
+KEY_F12 = 301
+KEY_F13 = 302
+KEY_F14 = 303
+KEY_F15 = 304
+KEY_F16 = 305
+KEY_F17 = 306
+KEY_F18 = 307
+KEY_F19 = 308
+KEY_F20 = 309
+KEY_F21 = 310
+KEY_F22 = 311
+KEY_F23 = 312
+KEY_F24 = 313
+KEY_F25 = 314
+KEY_KP_0 = 320
+KEY_KP_1 = 321
+KEY_KP_2 = 322
+KEY_KP_3 = 323
+KEY_KP_4 = 324
+KEY_KP_5 = 325
+KEY_KP_6 = 326
+KEY_KP_7 = 327
+KEY_KP_8 = 328
+KEY_KP_9 = 329
+KEY_KP_DECIMAL = 330
+KEY_KP_DIVIDE = 331
+KEY_KP_MULTIPLY = 332
+KEY_KP_SUBTRACT = 333
+KEY_KP_ADD = 334
+KEY_KP_ENTER = 335
+KEY_KP_EQUAL = 336
+KEY_LEFT_SHIFT = 340
+KEY_LEFT_CONTROL = 341
+KEY_LEFT_ALT = 342
+KEY_LEFT_SUPER = 343
+KEY_RIGHT_SHIFT = 344
+KEY_RIGHT_CONTROL = 345
+KEY_RIGHT_ALT = 346
+KEY_RIGHT_SUPER = 347
+KEY_MENU = 348
 KEY_LAST = KEY_MENU
+
+# Modifier key flags
+MOD_SHIFT = 0x0001
+MOD_CONTROL = 0x0002
+MOD_ALT = 0x0004
+MOD_SUPER = 0x0008
+
 
 # mouse button definitions
 MOUSE_BUTTON_1 = 0
@@ -276,55 +287,75 @@ JOYSTICK_15 = 14
 JOYSTICK_16 = 15
 JOYSTICK_LAST = JOYSTICK_16
 
-# glfw.OpenWindow modes
-WINDOW = 0x00010001
-FULLSCREEN = 0x00010002
+# error codes
+NOT_INITIALIZED = 0x00010001
+NO_CURRENT_CONTEXT = 0x00010002
+INVALID_ENUM = 0x00010003
+INVALID_VALUE = 0x00010004
+OUT_OF_MEMORY = 0x00010005
+API_UNAVAILABLE = 0x00010006
+VERSION_UNAVAILABLE = 0x00010007
+PLATFORM_ERROR = 0x00010008
+FORMAT_UNAVAILABLE = 0x00010009
 
-# glfw.GetWindowParam tokens
-OPENED = 0x00020001
-ACTIVE = 0x00020002
-ICONIFIED = 0x00020003
-ACCELERATED = 0x00020004
-RED_BITS = 0x00020005
-GREEN_BITS = 0x00020006
-BLUE_BITS = 0x00020007
-ALPHA_BITS = 0x00020008
-DEPTH_BITS = 0x00020009
-STENCIL_BITS = 0x0002000A
+# window attributes
+FOCUSED = 0x00020001
+ICONIFIED = 0x00020002
+RESIZABLE = 0x00020003
+VISIBLE = 0x00020004
+DECORATED = 0x00020005
 
-# the following constants are used for both glfw.GetWindowParam
-# and glfw.OpenWindowHint
-REFRESH_RATE = 0x0002000B
-ACCUM_RED_BITS = 0x0002000C
-ACCUM_GREEN_BITS = 0x0002000D
-ACCUM_BLUE_BITS = 0x0002000E
-ACCUM_ALPHA_BITS = 0x0002000F
-AUX_BUFFERS = 0x00020010
-STEREO = 0x00020011
-WINDOW_NO_RESIZE = 0x00020012
-FSAA_SAMPLES = 0x00020013
-OPENGL_VERSION_MAJOR = 0x00020014
-OPENGL_VERSION_MINOR = 0x00020015
-OPENGL_FORWARD_COMPAT = 0x00020016
-OPENGL_DEBUG_CONTEXT = 0x00020017
-OPENGL_PROFILE = 0x00020018
+RED_BITS = 0x00021001
+GREEN_BITS = 0x00021002
+BLUE_BITS = 0x00021003
+ALPHA_BITS = 0x00021004
+DEPTH_BITS = 0x00021005
+STENCIL_BITS = 0x00021006
+ACCUM_RED_BITS = 0x00021007
+ACCUM_GREEN_BITS = 0x00021008
+ACCUM_BLUE_BITS = 0x00021009
+ACCUM_ALPHA_BITS = 0x0002100A
+AUX_BUFFERS = 0x0002100B
+STEREO = 0x0002100C
+SAMPLES = 0x0002100D
+SRGB_CAPABLE = 0x0002100E
+REFRESH_RATE = 0x0002100F
 
-# glfw.OPENGL_PROFILE tokens
-OPENGL_CORE_PROFILE = 0x00050001
-OPENGL_COMPAT_PROFILE = 0x00050002
+CLIENT_API = 0x00022001
+CONTEXT_VERSION_MAJOR = 0x00022002
+CONTEXT_VERSION_MINOR = 0x00022003
+CONTEXT_REVISION = 0x00022004
+CONTEXT_ROBUSTNESS = 0x00022005
+OPENGL_FORWARD_COMPAT = 0x00022006
+OPENGL_DEBUG_CONTEXT = 0x00022007
+OPENGL_PROFILE = 0x00022008
 
-# glfw.Enable/glfw.Disable tokens
-MOUSE_CURSOR = 0x00030001
-STICKY_KEYS = 0x00030002
-STICKY_MOUSE_BUTTONS = 0x00030003
-SYSTEM_KEYS = 0x00030004
-KEY_REPEAT = 0x00030005
-AUTO_POLL_EVENTS = 0x00030006
+OPENGL_API = 0x00030001
+OPENGL_ES_API = 0x00030002
 
-# glfw.GetJoystickParam tokens
-PRESENT = 0x00050001
-AXES = 0x00050002
-BUTTONS = 0x00050003
+NO_ROBUSTNESS = 0
+NO_RESET_NOTIFICATION = 0x00031001
+LOSE_CONTEXT_ON_RESET = 0x00031002
+
+OPENGL_ANY_PROFILE = 0
+OPENGL_CORE_PROFILE = 0x00032001
+OPENGL_COMPAT_PROFILE = 0x00032002
+
+CURSOR = 0x00033001
+STICKY_KEYS = 0x00033002
+STICKY_MOUSE_BUTTONS = 0x00033003
+
+CURSOR_NORMAL = 0x00034001
+CURSOR_HIDDEN = 0x00034002
+CURSOR_DISABLED = 0x00034003
+
+CONNECTED = 0x00040001
+DISCONNECTED = 0x00040002
+
+
+# gl convenience definitions
+GL_TRUE = 0x1
+GL_FALSE = 0x0
 
 
 ##############
@@ -332,24 +363,43 @@ BUTTONS = 0x00050003
 ##############
 
 class vidmode(object):
-    def __init__(self, Width, Height, RedBits, GreenBits, BlueBits):
-        self.Width = Width
-        self.Height = Height
-        self.RedBits = RedBits
-        self.GreenBits = GreenBits
-        self.BlueBits = BlueBits
+    def __init__(self, width, height, redBits, greenBits, blueBits):
+        self.width = width
+        self.height = height
+        self.redBits = redBits
+        self.greenBits = greenBits
+        self.blueBits = blueBits
     
     def __repr__(self):
-        return "glfw.vidmode(%d, %d, %d, %d, %d)" % (self.Width, self.Height, self.RedBits, self.GreenBits, self.BlueBits)
+        return "glfw.vidmode({}, {}, {}, {}, {})".format(self.width, self.height, self.redBits, self.greenBits, self.blueBits)
     
     # C vidmode struct
     class _struct(_ctypes.Structure):
         _fields_ = [
-            ("Width", _ctypes.c_int),
-            ("Height", _ctypes.c_int),
-            ("RedBits", _ctypes.c_int),
-            ("BlueBits", _ctypes.c_int),
-            ("GreenBits", _ctypes.c_int),
+            ("width", _ctypes.c_int),
+            ("height", _ctypes.c_int),
+            ("redBits", _ctypes.c_int),
+            ("blueBits", _ctypes.c_int),
+            ("greenBits", _ctypes.c_int),
+        ]
+
+class gammaramp(object):
+    def __init__(self, red, green, blue, size):
+        self.red = red
+        self.green = green
+        self.blue = blue
+        self.size = size
+    
+    def __repr__(self):
+        return "glfw.gammaramp({}, {}, {}, {})".format(self.red, self.green, self.blue, self.size)
+    
+    # C vidmode struct
+    class _struct(_ctypes.Structure):
+        _fields_ = [
+            ("red", _ctypes.POINTER(_ctypes.c_ushort)),
+            ("green", _ctypes.POINTER(_ctypes.c_ushort)),
+            ("blue", _ctypes.POINTER(_ctypes.c_ushort)),
+            ("size", _ctypes.c_int),
         ]
 
 
@@ -439,57 +489,100 @@ def func_def(restype, func, *argtypes):
 func_def(_ctypes.c_int, _glfwdll.glfwInit)
 func_def(None, _glfwdll.glfwTerminate)
 func_def(None, _glfwdll.glfwGetVersion, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
+func_def(_ctypes.c_char_p, _glfwdll.glfwGetVersionString)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetErrorCallback, _ctypes.c_void_p)
 
-# window handling
-func_def(_ctypes.c_int, _glfwdll.glfwOpenWindow, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int)
-func_def(None, _glfwdll.glfwOpenWindowHint, _ctypes.c_int, _ctypes.c_int)
-func_def(None, _glfwdll.glfwCloseWindow)
-func_def(None, _glfwdll.glfwSetWindowTitle, _ctypes.c_char_p)
-func_def(None, _glfwdll.glfwGetWindowSize, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
-func_def(None, _glfwdll.glfwSetWindowSize, _ctypes.c_int, _ctypes.c_int)
-func_def(None, _glfwdll.glfwSetWindowPos, _ctypes.c_int, _ctypes.c_int)
-func_def(None, _glfwdll.glfwIconifyWindow)
-func_def(None, _glfwdll.glfwRestoreWindow)
-func_def(None, _glfwdll.glfwSwapBuffers)
-func_def(None, _glfwdll.glfwSwapInterval, _ctypes.c_int)
-func_def(_ctypes.c_int, _glfwdll.glfwGetWindowParam, _ctypes.c_int)
-# we pass callback functions as void pointers because the prototypes are defined at the wrapper functions themselves
-func_def(None, _glfwdll.glfwSetWindowSizeCallback, _ctypes.c_void_p)
-func_def(None, _glfwdll.glfwSetWindowCloseCallback, _ctypes.c_void_p)
-func_def(None, _glfwdll.glfwSetWindowRefreshCallback, _ctypes.c_void_p)
+# monitors
+func_def(_ctypes.POINTER(_ctypes.POINTER(_ctypes.c_int)), _glfwdll.glfwGetMonitors, _ctypes.POINTER(_ctypes.c_int))
+func_def(_ctypes.POINTER(_ctypes.c_int), _glfwdll.glfwGetPrimaryMonitor)
+func_def(None, _glfwdll.glfwGetMonitorPos, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwGetMonitorPhysicalSize, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
+func_def(_ctypes.c_char_p, _glfwdll.glfwGetMonitorName, _ctypes.POINTER(_ctypes.c_int))
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetMonitorCallback, _ctypes.c_void_p)
 
 # video mode functions
-func_def(_ctypes.c_int, _glfwdll.glfwGetVideoModes, _ctypes.POINTER(vidmode._struct), _ctypes.c_int);
-func_def(None, _glfwdll.glfwGetDesktopMode, _ctypes.POINTER(vidmode._struct))
+func_def(_ctypes.POINTER(vidmode._struct), _glfwdll.glfwGetVideoModes, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int));
+func_def(_ctypes.POINTER(vidmode._struct), _glfwdll.glfwGetVideoMode, _ctypes.POINTER(_ctypes.c_int));
 
-# input handling
+# gamma
+func_def(None, _glfwdll.glfwSetGamma, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_float)
+func_def(_ctypes.POINTER(gammaramp._struct), _glfwdll.glfwGetGammaRamp, _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwSetGammaRamp, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(gammaramp._struct))
+
+# window handling
+func_def(None, _glfwdll.glfwDefaultWindowHints)
+func_def(None, _glfwdll.glfwWindowHint, _ctypes.c_int, _ctypes.c_int)
+func_def(_ctypes.POINTER(_ctypes.c_int), _glfwdll.glfwCreateWindow, _ctypes.c_int, _ctypes.c_int, _ctypes.c_char_p, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwDestroyWindow, _ctypes.POINTER(_ctypes.c_int))
+func_def(_ctypes.c_int, _glfwdll.glfwWindowShouldClose, _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwSetWindowShouldClose, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int)
+
+func_def(None, _glfwdll.glfwSetWindowTitle, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_char_p)
+func_def(None, _glfwdll.glfwGetWindowPos, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwSetWindowPos, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int, _ctypes.c_int)
+func_def(None, _glfwdll.glfwGetWindowSize, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwSetWindowSize, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int, _ctypes.c_int)
+
+func_def(None, _glfwdll.glfwGetFramebufferSize, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
+
+func_def(None, _glfwdll.glfwIconifyWindow, _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwRestoreWindow, _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwShowWindow, _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwHideWindow, _ctypes.POINTER(_ctypes.c_int))
+
+func_def(_ctypes.POINTER(_ctypes.c_int), _glfwdll.glfwGetWindowMonitor, _ctypes.POINTER(_ctypes.c_int))
+func_def(_ctypes.c_int, _glfwdll.glfwGetWindowAttrib, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int)
+
+#func_def(None, _glfwdll.glfwSetWindowUserPointer, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+#func_def(_ctypes.c_void_p, _glfwdll.glfwGetWindowUserPointer, _ctypes.POINTER(_ctypes.c_int))
+
+# we pass callback functions as void pointers because the prototypes are defined at the wrapper functions themselves
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetWindowPosCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetWindowSizeCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetWindowCloseCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetWindowRefreshCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetWindowFocusCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetWindowIconifyCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetFramebufferSizeCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+
+# input
 func_def(None, _glfwdll.glfwPollEvents)
 func_def(None, _glfwdll.glfwWaitEvents)
-func_def(_ctypes.c_int, _glfwdll.glfwGetKey, _ctypes.c_int)
-func_def(_ctypes.c_int, _glfwdll.glfwGetMouseButton, _ctypes.c_int)
-func_def(None, _glfwdll.glfwGetMousePos, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
-func_def(None, _glfwdll.glfwSetMousePos, _ctypes.c_int, _ctypes.c_int)
-func_def(_ctypes.c_int, _glfwdll.glfwGetMouseWheel)
-func_def(None, _glfwdll.glfwSetMouseWheel, _ctypes.c_int)
-func_def(None, _glfwdll.glfwSetKeyCallback, _ctypes.c_void_p)
-func_def(None, _glfwdll.glfwSetCharCallback, _ctypes.c_void_p)
-func_def(None, _glfwdll.glfwSetMouseButtonCallback, _ctypes.c_void_p)
-func_def(None, _glfwdll.glfwSetMousePosCallback, _ctypes.c_void_p)
-func_def(None, _glfwdll.glfwSetMouseWheelCallback, _ctypes.c_void_p)
+func_def(_ctypes.c_int, _glfwdll.glfwGetInputMode, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int)
+func_def(None, _glfwdll.glfwSetInputMode, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int, _ctypes.c_int)
+
+func_def(_ctypes.c_int, _glfwdll.glfwGetKey, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int)
+func_def(_ctypes.c_int, _glfwdll.glfwGetMouseButton, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int)
+func_def(None, _glfwdll.glfwGetCursorPos, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_double), _ctypes.POINTER(_ctypes.c_double))
+func_def(None, _glfwdll.glfwSetCursorPos, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_double, _ctypes.c_double)
+
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetKeyCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetCharCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetMouseButtonCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetCursorPosCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetCursorEnterCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+func_def(_ctypes.c_void_p, _glfwdll.glfwSetScrollCallback, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_void_p)
+
+# joystick input
+func_def(_ctypes.c_int, _glfwdll.glfwJoystickPresent, _ctypes.c_int)
+func_def(_ctypes.POINTER(_ctypes.c_float), _glfwdll.glfwGetJoystickAxes, _ctypes.c_int, _ctypes.POINTER(_ctypes.c_int))
+func_def(_ctypes.POINTER(_ctypes.c_ubyte), _glfwdll.glfwGetJoystickButtons, _ctypes.c_int, _ctypes.POINTER(_ctypes.c_int))
+func_def(_ctypes.c_char_p, _glfwdll.glfwGetJoystickName, _ctypes.c_int)
+
+# clipboard functions
+func_def(None, _glfwdll.glfwSetClipboardString, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_char_p)
+func_def(_ctypes.c_char_p, _glfwdll.glfwGetClipboardString, _ctypes.POINTER(_ctypes.c_int))
+
+# context functions
+func_def(None, _glfwdll.glfwMakeContextCurrent, _ctypes.POINTER(_ctypes.c_int))
+func_def(_ctypes.POINTER(_ctypes.c_int), _glfwdll.glfwGetCurrentContext)
+func_def(None, _glfwdll.glfwSwapBuffers, _ctypes.POINTER(_ctypes.c_int))
+func_def(None, _glfwdll.glfwSwapInterval, _ctypes.c_int)
 
 # extension support
 func_def(_ctypes.c_int, _glfwdll.glfwExtensionSupported, _ctypes.c_char_p)
 func_def(_ctypes.c_void_p, _glfwdll.glfwGetProcAddress, _ctypes.c_char_p)
-func_def(None, _glfwdll.glfwGetGLVersion, _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int), _ctypes.POINTER(_ctypes.c_int))
 
-# joystick input
-func_def(_ctypes.c_int, _glfwdll.glfwGetJoystickParam, _ctypes.c_int, _ctypes.c_int)
-func_def(_ctypes.c_int, _glfwdll.glfwGetJoystickPos, _ctypes.c_int, _ctypes.POINTER(_ctypes.c_float), _ctypes.c_int)
-func_def(_ctypes.c_int, _glfwdll.glfwGetJoystickButtons, _ctypes.c_int, _ctypes.POINTER(_ctypes.c_ubyte), _ctypes.c_int)
-
-# enable/disable functions
-func_def(None, _glfwdll.glfwEnable, _ctypes.c_int)
-func_def(None, _glfwdll.glfwDisable, _ctypes.c_int)
 
 
 # Normally argument checking is a no-go in Python (duck typing), but we're dealing 
@@ -499,10 +592,12 @@ func_def(None, _glfwdll.glfwDisable, _ctypes.c_int)
 # (such as channel depths) and only the appropriate integer flags where asked for.
 
 
+# TODO: replace error checking with glfwSetErrorCallback
+
+
 # error for failed init
 class InitError(Exception):
     pass
-    
 
 # error for failed opening window
 class OpeningWindowError(Exception):
@@ -513,11 +608,13 @@ def Init():
     if not _glfwdll.glfwInit():
         raise InitError("couldn't initialize GLFW")
 
-        
 def Terminate():
     _glfwdll.glfwTerminate()
-    
-    
+
+def GetVersionString():
+    version = _glfwdll.GetVersionString()
+    return str(version.value)
+
 def GetVersion():
     major, minor, rev = _ctypes.c_int(), _ctypes.c_int(), _ctypes.c_int()
     
@@ -525,99 +622,106 @@ def GetVersion():
     
     return (major.value, minor.value, rev.value)
 
-def OpenWindowHint(target, hint):
+def DefaultWindowHints():
+    _glfwdll.glfwDefaultWindowHints()
+
+def WindowHint(target, hint):
     if not _is_int(target) or not _is_int(hint):
         raise TypeError("target and hint must be numbers")
 
     if target not in (
-        REFRESH_RATE,
+        RESIZABLE, VISIBLE, DECORATED,
+        RED_BITS, GREEN_BITS, BLUE_BITS, ALPHA_BITS, DEPTH_BITS, STENCIL_BITS,
         ACCUM_RED_BITS, ACCUM_GREEN_BITS, ACCUM_BLUE_BITS, ACCUM_ALPHA_BITS,
-        AUX_BUFFERS, STEREO, WINDOW_NO_RESIZE, FSAA_SAMPLES,
-        OPENGL_VERSION_MAJOR, OPENGL_VERSION_MINOR, OPENGL_FORWARD_COMPAT,
-        OPENGL_DEBUG_CONTEXT, OPENGL_PROFILE
+        AUX_BUFFERS, STEREO, SAMPLES, SRGB_CAPABLE, REFRESH_RATE,
+        CLIENT_API, OPENGL_FORWARD_COMPAT, OPENGL_PROFILE, OPENGL_DEBUG_CONTEXT,
+        CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MINOR, CONTEXT_ROBUSTNESS,
         ):
         raise ValueError("invalid target parameter")
 
-    return _glfwdll.glfwOpenWindowHint(target, hint)
-    
+    _glfwdll.glfwWindowHint(target, hint)
 
-def OpenWindow(width, height, redbits, greenbits, bluebits, alphabits, depthbits, stencilbits, mode):
+def GetWindowAttrib(window, param):
+    if not _is_int(param):
+        raise TypeError("param must be a integer")
+    
+    if not param in (
+        FOCUSED, ICONIFIED,
+        RESIZABLE, VISIBLE, DECORATED,
+        SAMPLES, SRGB_CAPABLE,
+        CLIENT_API, OPENGL_FORWARD_COMPAT, OPENGL_PROFILE, OPENGL_DEBUG_CONTEXT,
+        CONTEXT_VERSION_MAJOR, CONTEXT_VERSION_MINOR, CONTEXT_ROBUSTNESS,
+        CONTEXT_REVISION,
+    ):
+        raise ValueError("invalid requested parameter")
+
+    return _glfwdll.glfwGetWindowAttrib(window, param)
+
+def CreateWindow(width, height, title, monitor=None, window=None):
     if not _is_real(width) or not _is_real(height):
         raise TypeError("width and height must be numbers")
         
     if width < 0  or height < 0:
         raise ValueError("width and height must be non-negative")
     
-    if not all([_is_int(channel) for channel in (redbits, greenbits, bluebits, alphabits)]):
-        raise TypeError("redbits, greenbits, bluebits and alphabits must be integers")
-        
-    if not all([channel >= 0 for channel in (redbits, greenbits, bluebits, alphabits)]):
-        raise ValueError("redbits, greenbits, bluebits and alphabits must be non-negative")
-    
-    if not all([_is_int(buffersize) for buffersize in (depthbits, stencilbits)]):
-        raise TypeError("depthbits and stencilbits must be integers")
-        
-    if not all([buffersize >= 0 for buffersize in (depthbits, stencilbits)]):
-        raise ValueError("depthbits and stencilbits must be non-negative")
-    
-    if not _is_int(mode):
-        raise TypeError("mode must be an integer")
-        
-    if mode not in (WINDOW, FULLSCREEN):
-        raise ValueError("mode must be equal to WINDOW or FULLSCREEN")
-    
-    opened = _glfwdll.glfwOpenWindow(int(width), int(height), redbits, greenbits, bluebits, alphabits, depthbits, stencilbits, mode)
+    opened = _glfwdll.glfwCreateWindow(int(width), int(height), title, None, None)
     
     if not opened:
         raise OpeningWindowError("couldn't open GLFW window")
 
-        
-def CloseWindow():
-    _glfwdll.glfwCloseWindow()
-    
-    
-def SetWindowTitle(title):
+    return opened
+
+def DestroyWindow(window):
+    _glfwdll.glfwDestroyWindow(window)
+
+def SetWindowTitle(window, title):
     title = title.encode("latin-1")
     
-    _glfwdll.glfwSetWindowTitle(title)
+    _glfwdll.glfwSetWindowTitle(window, title)
 
-    
-def GetWindowSize():
+def GetWindowSize(window):
     width, height = _ctypes.c_int(), _ctypes.c_int()
     
-    _glfwdll.glfwGetWindowSize(_ctypes.byref(width), _ctypes.byref(height))
+    _glfwdll.glfwGetWindowSize(window, _ctypes.byref(width), _ctypes.byref(height))
     
     return width.value, height.value
-    
-    
-def SetWindowSize(width, height):
+
+def SetWindowSize(window, width, height):
     if not _is_real(width) or not _is_real(height):
         raise TypeError("width and height must be numbers")
     
     if width < 0 or height < 0:
         raise ValueError("width and height must be non-negative")
         
-    _glfwdll.glfwSetWindowSize(int(width), int(height))
+    _glfwdll.glfwSetWindowSize(window, int(width), int(height))
+
+def GetWindowPos(window):
+    x, y = _ctypes.c_int(), _ctypes.c_int()
     
+    _glfwdll.glfwGetWindowPos(window, _ctypes.byref(x), _ctypes.byref(y))
     
-def SetWindowPos(x, y):
+    return x.value, y.value
+
+def SetWindowPos(window, x, y):
     if not _is_real(x) or not _is_real(y):
         raise ValueError("x and y must be numbers")
     
-    _glfwdll.glfwSetWindowPos(int(x), int(y))
-    
-    
-def IconifyWindow():
-    _glfwdll.glfwIconifyWindow()
+    _glfwdll.glfwSetWindowPos(window, int(x), int(y))
 
-    
-def RestoreWindow():
-    _glfwdll.glfwRestoreWindow()
+def IconifyWindow(window):
+    _glfwdll.glfwIconifyWindow(window)
 
-    
-def SwapBuffers():
-    _glfwdll.glfwSwapBuffers()
-    
+def RestoreWindow(window):
+    _glfwdll.glfwRestoreWindow(window)
+
+def ShowWindow(window):
+    _glfwdll.glfwShowWindow(window)
+
+def HideWindow(window):
+    _glfwdll.glfwHideWindow(window)
+
+def SwapBuffers(window):
+    _glfwdll.glfwSwapBuffers(window)
     
 def SwapInterval(interval):
     if not _is_int(interval):
@@ -627,95 +731,213 @@ def SwapInterval(interval):
         raise ValueError("interval must be non-negative")
         
     _glfwdll.glfwSwapInterval(interval)
-    
-    
-def GetWindowParam(param):
-    if not _is_int(param):
-        raise TypeError("param must be a integer")
-    
-    if not param in (
-        OPENED, ACTIVE, ICONIFIED, ACCELERATED, RED_BITS, GREEN_BITS, BLUE_BITS,
-        ALPHA_BITS, DEPTH_BITS, STENCIL_BITS, REFRESH_RATE, ACCUM_RED_BITS, ACCUM_GREEN_BITS, ACCUM_BLUE_BITS, ACCUM_ALPHA_BITS,
-        AUX_BUFFERS, STEREO, WINDOW_NO_RESIZE, FSAA_SAMPLES,
-        OPENGL_VERSION_MAJOR, OPENGL_VERSION_MINOR, OPENGL_FORWARD_COMPAT, OPENGL_DEBUG_CONTEXT, OPENGL_PROFILE
-    ):
-        raise ValueError("invalid requested parameter")
-    
-    return _glfwdll.glfwGetWindowParam(param)
 
+def MakeContextCurrent(window):
+    _glfwdll.glfwMakeContextCurrent(window)
 
-def SetWindowSizeCallback(func):
+def GetCurrentContext():
+    return _glfwdll.glfwGetCurrentContext()
+
+def WindowShouldClose(window):
+    return _glfwdll.glfwWindowShouldClose(window)
+
+def SetWindowShouldClose(window, value):
+    if not _is_int(value):
+        raise TypeError("value must be an integer")
+
+    _glfwdll.glfwSetWindowShouldClose(window, value)
+
+def GetFrambufferSize(window):
+    width, height = _ctypes.c_int(), _ctypes.c_int()
+
+    _glfwdll.glfwGetFramebufferSize(window, _ctypes.byref(width), _ctypes.byref(height))
+
+    return int(width.value), int(height.value)
+
+def SetWindowPosCallback(window, func):
     if func is None:
         callback = None
     else:
-        if not _is_callable_nargs(func, 2):
-            raise TypeError("incompatible callback (a callable taking two arguments is required)")
+        if not _is_callable_nargs(func, 3):
+            raise TypeError("incompatible callback (a callable taking three arguments is required)")
+            
+        callback = SetWindowPosCallback._callbacktype(func)
+    
+    # we must keep a reference
+    SetWindowPosCallback._callback = callback
+    _glfwdll.glfwSetWindowPosCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetWindowSizeCallback(window, func):
+    if func is None:
+        callback = None
+    else:
+        if not _is_callable_nargs(func, 3):
+            raise TypeError("incompatible callback (a callable taking three arguments is required)")
             
         callback = SetWindowSizeCallback._callbacktype(func)
     
     # we must keep a reference
     SetWindowSizeCallback._callback = callback
-    _glfwdll.glfwSetWindowSizeCallback(_ctypes.cast(callback, _ctypes.c_void_p))
+    _glfwdll.glfwSetWindowSizeCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
     
 
-def SetWindowCloseCallback(func):
+def SetWindowCloseCallback(window, func):
     if func is None:
         callback = None
     else:
-        if not _is_callable_nargs(func, 0):
-            raise TypeError("incompatible callback (a callable taking no arguments is required)")
+        if not _is_callable_nargs(func, 1):
+            raise TypeError("incompatible callback (a callable taking one argument is required)")
             
         callback = SetWindowCloseCallback._callbacktype(lambda: bool(func()))
         
     SetWindowCloseCallback._callback = callback
-    _glfwdll.glfwSetWindowCloseCallback(_ctypes.cast(callback, _ctypes.c_void_p))
+    _glfwdll.glfwSetWindowCloseCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
 
 
-def SetWindowRefreshCallback(func):
+def SetWindowRefreshCallback(window, func):
     if func is None:
         callback = None
     else:
-        if not _is_callable_nargs(func, 0):
-            raise TypeError("incompatible callback (a callable taking no arguments is required)")
+        if not _is_callable_nargs(func, 1):
+            raise TypeError("incompatible callback (a callable taking one argument is required)")
         
         callback = SetWindowRefreshCallback._callbacktype(func)
         
     SetWindowRefreshCallback._callback = callback
-    _glfwdll.glfwSetWindowRefreshCallback(_ctypes.cast(callback, _ctypes.c_void_p))
-    
+    _glfwdll.glfwSetWindowRefreshCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetWindowFocusCallback(window, func):
+    if func is None:
+        callback = None
+    else:
+        if not _is_callable_nargs(func, 2):
+            raise TypeError("incompatible callback (a callable taking two arguments is required)")
         
-def GetVideoModes():
-    video_modes = (vidmode._struct * GetVideoModes.MAX_MODES)()
-    num_modes = _glfwdll.glfwGetVideoModes(video_modes, GetVideoModes.MAX_MODES)
-    
+        callback = SetWindowFocusCallback._callbacktype(func)
+        
+    SetWindowFocusCallback._callback = callback
+    _glfwdll.glfwSetWindowFocusCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetWindowIconifyCallback(window, func):
+    if func is None:
+        callback = None
+    else:
+        if not _is_callable_nargs(func, 2):
+            raise TypeError("incompatible callback (a callable taking two arguments is required)")
+        
+        callback = SetWindowIconifyCallback._callbacktype(func)
+        
+    SetWindowIconifyCallback._callback = callback
+    _glfwdll.glfwSetWindowIconifyCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetFramebufferSizeCallback(window, func):
+    if func is None:
+        callback = None
+    else:
+        if not _is_callable_nargs(func, 3):
+            raise TypeError("incompatible callback (a callable taking three arguments is required)")
+        
+        callback = SetFramebufferSizeCallback._callbacktype(func)
+        
+    SetFramebufferSizeCallback._callback = callback
+    _glfwdll.glfwSetFramebufferSizeCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetErrorCallback(func):
+    if func is None:
+        callback = None
+    else:
+        if not _is_callable_nargs(func, 2):
+            raise TypeError("incompatible callback (a callable taking two arguments is required)")
+        
+        callback = SetErrorCallback._callbacktype(func)
+        
+    SetErrorCallback._callback = callback
+    _glfwdll.glfwSetErrorCallback(_ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetMonitorCallback(func):
+    if func is None:
+        callback = None
+    else:
+        if not _is_callable_nargs(func, 2):
+            raise TypeError("incompatible callback (a callable taking two arguments is required)")
+        
+        callback = SetMonitorCallback._callbacktype(func)
+        
+    SetMonitorCallback._callback = callback
+    _glfwdll.glfwSetMonitorCallback(_ctypes.cast(callback, _ctypes.c_void_p))
+
+def GetMonitors():
+    num_monitors = _ctypes.c_int()
+
+    monitors = _glfwdll.glfwGetMonitors(_ctypes.byref(num_monitors))
+
+    return [monitors[i] for i in range(num_monitors.value)]
+
+def GetPrimaryMonitor():
+    monitor = _glfwdll.glfwGetPrimaryMonitor()
+    return monitor
+
+def GetMonitorPos(monitor):
+    x, y = _ctypes.c_int(), _ctypes.c_int()
+
+    _glfwdll.glfwGetMonitorPos(monitor, _ctypes.byref(x), _ctypes.byref(y))
+
+    return int(x.value), int(y.value)
+
+def GetMonitorPhysicalSize(monitor):
+    width, height = _ctypes.c_int(), _ctypes.c_int()
+
+    _glfwdll.glfwGetMonitorPhysicalSize(monitor, _ctypes.byref(width), _ctypes.byref(height))
+
+    return int(width.value), int(height.value)
+
+def GetMonitorName(monitor):
+    return _glfwdll.glfwGetMonitorName(monitor)
+
+def GetWindowMonitor(window):
+    return _glfwdll.glfwGetWindowMonitor(window)
+
+def GetVideoModes(monitor):
+    num_modes = _ctypes.c_int()
+
+    video_modes = _glfwdll.glfwGetVideoModes(monitor, _ctypes.byref(num_modes))
+
     result = []
-    for i in range(num_modes):
+    for i in range(num_modes.value):
         video_mode = video_modes[i]
-        result.append(vidmode(video_mode.Width, video_mode.Height, video_mode.RedBits, video_mode.GreenBits, video_mode.BlueBits))
-    
+        result.append(vidmode(video_mode.width, video_mode.height, video_mode.redBits, video_mode.greenBits, video_mode.blueBits))
+
     return result
 
-# this should be sufficient, but we put it in a function attribute so one can change it if nessecary
-GetVideoModes.MAX_MODES = 128
-    
-    
-def GetDesktopMode():
-    video_mode = vidmode._struct()
-    
-    _glfwdll.glfwGetDesktopMode(_ctypes.byref(video_mode))
-    
-    return vidmode(video_mode.Width, video_mode.Height, video_mode.RedBits, video_mode.GreenBits, video_mode.BlueBits)
+def GetVideoMode(monitor):
+    video_mode = _glfwdll.glfwGetVideoMode(monitor)
 
+    if bool(video_mode):
+        video_mode = video_mode[0]
+        return vidmode(video_mode.width, video_mode.height, video_mode.redBits, video_mode.greenBits, video_mode.blueBits)
+    return None
+
+def SetGamma(monitor, gamma):
+    _glfwdll.glfwSetGamma(monitor, _ctypes.c_float(gamma))
+
+def GetGammaRamp(monitor):
+    gamma = _glfwdll.glfwGetGammaRamp(monitor)
+
+    if bool(gamma):
+        gamma = gamma[0]
+        return gammaramp(gamma.red[0], gamma.green[0], gamma.blue[0], gamma.size)
+    return None
+
+def SetGammaRamp(monitor, gamma):
+    _glfwdll.glfwSetGammaRamp(monitor, _ctypes.byref(gamma._struct))
 
 def PollEvents():
     _glfwdll.glfwPollEvents()
-    
-    
+
 def WaitEvents():
     _glfwdll.glfwWaitEvents()
 
-    
-def GetKey(key):
+def GetKey(window, key):
     try:
         # passed a string?
         key = ord(key.encode("latin-1").upper())
@@ -723,19 +945,21 @@ def GetKey(key):
         # must be an integer, no?
         if not key in GetKey._legal_keycodes:
             raise ValueError("key must be one of the keycodes or a one-character latin-1 string")
-    
-    return _glfwdll.glfwGetKey(key)
-    
+    print key
+    result = _glfwdll.glfwGetKey(window, key)
+    print result
+    return result
+    #return _glfwdll.glfwGetKey(window, key)
+
 # too tedious to repeat here, use locals()
-GetKey._legal_keycodes = set([code for var, code in list(globals().items()) if var.startswith("KEY_")])
+GetKey._legal_keycodes = set([code for var, code in list(globals().items()) if var.startswith("KEY_") or var.startswith("MOD_")])
 GetKey._legal_keycodes.remove(KEY_UNKNOWN)
-GetKey._legal_keycodes.remove(KEY_SPECIAL)
 try:
 	del var, code
 except NameError: # not in all versions these "leak"
 	pass
-    
-def GetMouseButton(button):
+
+def GetMouseButton(window, button):
     if not _is_int(button):
         raise TypeError("button must be a integer")
         
@@ -743,190 +967,204 @@ def GetMouseButton(button):
                       MOUSE_BUTTON_5, MOUSE_BUTTON_6, MOUSE_BUTTON_7, MOUSE_BUTTON_8):
         raise ValueError("button must be one of the button codes")
     
-    return _glfwdll.glfwGetMouseButton(button)
+    return _glfwdll.glfwGetMouseButton(window, button)
 
+def GetCursorPos(window):
+    x, y = _ctypes.c_double(), _ctypes.c_double()
     
-def GetMousePos():
-    x, y = _ctypes.c_int(), _ctypes.c_int()
+    _glfwdll.glfwGetCursorPos(window, _ctypes.byref(x), _ctypes.byref(y))
     
-    _glfwdll.glfwGetMousePos(_ctypes.byref(x), _ctypes.byref(y))
-    
-    return x.value, y.value
+    return int(x.value), int(y.value)
 
-    
-def SetMousePos(x, y):
+def SetCursorPos(window, x, y):
     if not _is_real(x) or not _is_real(y):
         raise TypeError("x and y should be numbers")
+    x, y = _ctypes.c_double(x), _ctypes.c_double(y)
     
-    _glfwdll.glfwSetMousePos(int(x), int(y))
-    
+    _glfwdll.glfwSetCursorPos(window, x, y)
 
-def GetMouseWheel():
-    return _glfwdll.glfwGetMouseWheel()
-    
-
-def SetMouseWheel(pos):
-    if not _is_int(pos):
-        raise TypeError("pos should be an integer")
-    
-    _glfwdll.glfwSetMouseWheel(pos)
-    
-
-def SetKeyCallback(func):
+def SetKeyCallback(window, func):
     if func is None:
         callback = None
     else:
-        if not _is_callable_nargs(func, 2):
-            raise TypeError("incompatible callback (a callable taking two arguments is required)")
+        if not _is_callable_nargs(func, 5):
+            raise TypeError("incompatible callback (a callable taking five arguments is required)")
         
-        callback = SetKeyCallback._callbacktype(lambda key, action: func(chr(key) if key < 256 else key, action))
+        callback = SetKeyCallback._callbacktype(
+            lambda key, scancode, action, mods: func(chr(key) if key < 256 else key, scancode, action, mods)
+        )
         
     SetKeyCallback._callback = callback
-    _glfwdll.glfwSetKeyCallback(_ctypes.cast(callback, _ctypes.c_void_p))
-    
-    
-def SetCharCallback(func):
+    _glfwdll.glfwSetKeyCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetCharCallback(window, func):
     if func is None:
         callback = None
     else:
-        if not _is_callable_nargs(func, 2):
-            raise TypeError("incompatible callback (a callable taking two arguments is required)")
+        if not _is_callable_nargs(func, 3):
+            raise TypeError("incompatible callback (a callable taking three arguments is required)")
         
         callback = SetCharCallback._callbacktype(lambda char, action: func(chr(char), action))
         
     SetCharCallback._callback = callback
-    _glfwdll.glfwSetCharCallback(_ctypes.cast(callback, _ctypes.c_void_p))
-    
-    
-def SetMouseButtonCallback(func):
+    _glfwdll.glfwSetCharCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetMouseButtonCallback(window, func):
     if func is None:
         callback = None
     else:
-        if not _is_callable_nargs(func, 2):
-            raise TypeError("incompatible callback (a callable taking two arguments is required)")
+        if not _is_callable_nargs(func, 4):
+            raise TypeError("incompatible callback (a callable taking four arguments is required)")
         
         callback = SetMouseButtonCallback._callbacktype(func)
         
     SetMouseButtonCallback._callback = callback
-    _glfwdll.glfwSetMouseButtonCallback(_ctypes.cast(callback, _ctypes.c_void_p))
-    
-    
-def SetMousePosCallback(func):
+    _glfwdll.glfwSetMouseButtonCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetCursorPosCallback(window, func):
+    if func is None:
+        callback = None
+    else:
+        if not _is_callable_nargs(func, 3):
+            raise TypeError("incompatible callback (a callable taking three arguments is required)")
+        
+        callback = SetCursorPosCallback._callbacktype(func)
+        
+    SetCursorPosCallback._callback = callback
+    _glfwdll.glfwSetCursorPosCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetCursorEnterCallback(window, func):
     if func is None:
         callback = None
     else:
         if not _is_callable_nargs(func, 2):
             raise TypeError("incompatible callback (a callable taking two arguments is required)")
         
-        callback = SetMousePosCallback._callbacktype(func)
+        callback = SetCursorEnterCallback._callbacktype(func)
         
-    SetMousePosCallback._callback = callback
-    _glfwdll.glfwSetMousePosCallback(_ctypes.cast(callback, _ctypes.c_void_p))
-    
-    
-def SetMouseWheelCallback(func):
+    SetCursorEnterCallback._callback = callback
+    _glfwdll.glfwSetCursorEnterCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetScrollCallback(window, func):
     if func is None:
         callback = None
     else:
-        if not _is_callable_nargs(func, 1):
-            raise TypeError("incompatible callback (a callable taking one arguments is required)")
+        if not _is_callable_nargs(func, 3):
+            raise TypeError("incompatible callback (a callable taking three arguments is required)")
         
-        callback = SetMouseWheelCallback._callbacktype(func)
+        callback = SetScrollCallback._callbacktype(func)
         
-    SetMouseWheelCallback._callback = callback
-    _glfwdll.glfwSetMouseWheelCallback(_ctypes.cast(callback, _ctypes.c_void_p))
-    
+    SetScrollCallback._callback = callback
+    _glfwdll.glfwSetScrollCallback(window, _ctypes.cast(callback, _ctypes.c_void_p))
+
+def SetClipboardString(window, string):
+    s = _ctypes.c_char_p()
+    s.value = string
+
+    _glfwdll.glfwSetClipboardString(window, s)
+
+def GetClipboardString(window):
+    return _glfwdll.glfwGetClipboardString(window)
 
 def ExtensionSupported(extension):
     return _glfwdll.glfwExtensionSupported(extension.encode("latin-1")) == GL_TRUE
 
-
 def GetProcAddress(procname):
     return _glfwdll.glfwGetProcAddress(procname.encode("latin-1"))
 
-
-def GetGLVersion():
-    major, minor, rev = _ctypes.c_int(), _ctypes.c_int(), _ctypes.c_int()
-    
-    _glfwdll.glfwGetGLVersion(_ctypes.byref(major), _ctypes.byref(minor), _ctypes.byref(rev))
-    
-    return (major.value, minor.value, rev.value)   
-
-
-def GetJoystickParam(joy, param):
-    if not _is_int(joy) or not _is_int(param):
-        raise TypeError("joy and param must be integers")
-    
-    # the last time I checked the JOYSTICK_n were simply from 0 to 15 inclusive
-    if not joy in set(range(16)):
-        raise ValueError("joy must be one of the glfw.JOYSTICK_n constants")
-    
-    if not param in (PRESENT, AXES, BUTTONS):
-        raise ValueError("param must be one of glfw.PRESENT, glfw.AXES or glfw.BUTTONS")
-    
-    return _glfwdll.glfwGetJoystickParam(joy, param)
-    
-
-def GetJoystickPos(joy):
+def JoystickPresent(joy):
     if not _is_int(joy):
-        raise TypeError("joy must an integer")
+        raise TypeError("joystick must be int")
     
     if not joy in set(range(16)):
         raise ValueError("joy must be one of the glfw.JOYSTICK_n constants")
-    
-    max_axes = _glfwdll.glfwGetJoystickParam(joy, AXES)
-    pos = (_ctypes.c_float * max_axes)()
-    num_axes = _glfwdll.glfwGetJoystickPos(joy, pos, max_axes)
-    
-    return [pos[i] for i in range(num_axes)]
 
+    return _glfwdll.glfwJoystickPresent(joy)
+
+def GetJoystickAxes(joy):
+    if not _is_int(joy):
+        raise TypeError("joystick must be int")
+    
+    if not joy in set(range(16)):
+        raise ValueError("joy must be one of the glfw.JOYSTICK_n constants")
+
+    num_axes = _ctypes.c_int()
+
+    axes = _glfwdll.glfwGetJoystickAxes(joy, _ctypes.byref(num_axes))
+
+    return [axes[i].value for i in range(num_axes.value)]
 
 def GetJoystickButtons(joy):
     if not _is_int(joy):
-        raise TypeError("joy must an integer")
+        raise TypeError("joystick must be int")
     
     if not joy in set(range(16)):
         raise ValueError("joy must be one of the glfw.JOYSTICK_n constants")
-    
-    max_buttons = _glfwdll.glfwGetJoystickParam(joy, BUTTONS)
-    buttons = (_ctypes.c_ubyte * max_buttons)()
-    num_buttons = _glfwdll.glfwGetJoystickButtons(joy, buttons, max_buttons)
-    
-    return [buttons[i] for i in range(num_buttons)]
-    
 
-def Enable(token):
-    if not _is_int(token):
-        raise TypeError("token must be an integer")
-    
-    if not token in (MOUSE_CURSOR, STICKY_KEYS, STICKY_MOUSE_BUTTONS, SYSTEM_KEYS, KEY_REPEAT, AUTO_POLL_EVENTS):
-        raise ValueError("token must be a valid feature code")
-    
-    _glfwdll.glfwEnable(token)
+    num_buttons = _ctypes.c_int()
 
+    buttons = _glfwdll.glfwGetJoystickButtons(joy, _ctypes.byref(num_buttons))
+
+    return [buttons[i].value for i in range(num_buttons.value)]
+
+def GetJoystickName(joy):
+    if not _is_int(joy):
+        raise TypeError("joystick must be int")
     
-def Disable(token):
-    if not _is_int(token):
-        raise TypeError("token must be an integer")
+    if not joy in set(range(16)):
+        raise ValueError("joy must be one of the glfw.JOYSTICK_n constants")
+
+    name = _glfwdll.glfwGetJoystickName(joy)
+    if not bool(name):
+        return None
+    return str(name.value)
+
+def SetInputMode(window, mode, value):
+    if mode not in (CURSOR, STICKY_KEYS, STICKY_MOUSE_BUTTONS,):
+        raise TypeError("mode is not valid")
+
+    if mode == CURSOR:
+        if value not in (CURSOR_NORMAL, CURSOR_HIDDEN, CURSOR_DISABLED,):
+            raise ValueError("invalid value for mode")
+    elif mode in (STICKY_KEYS, STICKY_MOUSE_BUTTONS):
+        # must be GL_TRUE or GL_FALSE
+        if value not in (0x0, 0x1):
+            raise ValueError("value must be GL_TRUE or GL_FALSE")
     
-    if not token in (MOUSE_CURSOR, STICKY_KEYS, STICKY_MOUSE_BUTTONS, SYSTEM_KEYS, KEY_REPEAT, AUTO_POLL_EVENTS):
-        raise ValueError("token must be a valid feature code")
-    
-    _glfwdll.glfwDisable(token)
-    
-    
+    _glfwdll.glfwSetInputMode(window, mode, value)
+
+def GetInputMode(window, mode):
+    if mode not in (CURSOR, STICKY_KEYS, STICKY_MOUSE_BUTTONS):
+        raise TypeError("mode is not valid")
+
+    result = _glfwdll.glfwGetInputMode(window, mode)
+    return int(result.value)
+
+
 #####################
 # function typedefs #
 #####################
 
-SetWindowSizeCallback._callbacktype = func_typedef(None, _ctypes.c_int, _ctypes.c_int)
-SetWindowCloseCallback._callbacktype = func_typedef(_ctypes.c_int)
-SetWindowRefreshCallback._callbacktype = func_typedef(None)
-SetKeyCallback._callbacktype = func_typedef(None, _ctypes.c_int, _ctypes.c_int)
-SetCharCallback._callbacktype = func_typedef(None, _ctypes.c_int, _ctypes.c_int)
-SetMouseButtonCallback._callbacktype = func_typedef(None, _ctypes.c_int, _ctypes.c_int)
-SetMousePosCallback._callbacktype = func_typedef(None, _ctypes.c_int, _ctypes.c_int)
-SetMouseWheelCallback._callbacktype = func_typedef(None, _ctypes.c_int)
+SetWindowPosCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int, _ctypes.c_int)
+SetWindowSizeCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int, _ctypes.c_int)
+SetWindowCloseCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int))
+SetWindowRefreshCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int))
+SetWindowFocusCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int)
+SetWindowIconifyCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int)
+SetFramebufferSizeCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int, _ctypes.c_int)
+
+SetMonitorCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int)
+
+SetKeyCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int, _ctypes.c_int, _ctypes.c_int, _ctypes.c_int)
+SetCharCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int, _ctypes.c_int)
+
+SetMouseButtonCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int, _ctypes.c_int)
+SetCursorPosCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_double, _ctypes.c_double)
+SetCursorEnterCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_int)
+SetScrollCallback._callbacktype = func_typedef(None, _ctypes.POINTER(_ctypes.c_int), _ctypes.c_double, _ctypes.c_double)
+
+SetErrorCallback._callbacktype = func_typedef(None, _ctypes.c_int, _ctypes.c_char_p)
+
 
 # delete no longer needed helper functions
 del func_def
