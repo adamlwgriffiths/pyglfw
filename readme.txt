@@ -1,6 +1,6 @@
 Introduction
 ------------
-This is pyglfw, Python bindings for GLFW 2.7.5 using ctypes. It's a very light
+This is pyglfw, Python bindings for GLFW 3.0.3 using ctypes. It's a very light
 set of bindings, the API is nearly the same from Python as from C, except that
 the C and ctypes details are hidden from the user.
 
@@ -30,10 +30,6 @@ Everything works as described in the GLFW reference manual, with a few changes:
    a list of video modes.
  * The GLFWvidmode struct has been replaced with the class vidmode, who's
    member variables have the same names and meaning as GLFWvidmode's.
- * Type/value checking has been added to some functions, for example passing a
-   negative size into glfw.OpenWindow raises a ValueError, so does passing a
-   list into glfw.SetWindowTitle. This is done because GLFW 2.7.5 has no error
-   messages, and thus this will ease debugging.
  * glfw.Init does not return an integer indicating the status, instead it
    always returns None and raises an EnvironmentError if the initialization
    failed.
@@ -56,8 +52,7 @@ manual (see docs/reference.pdf).
 Dependencies
 ------------
 pyglfw depends on a Python version greater or equal than 2.5. It also depends on
-GLFW 2.7.5, although any larger 2.x.x version should work (not GLFW 3, that's
-incompatible).
+GLFW 3.0.3, although any larger 3.x.x version should work.
 
 pyglfw needs a shared library version of GLFW to run. For Windows users it's
 easy - pyglfw comes shipped with a Windows GLFW DLL pre-built. Users on other
