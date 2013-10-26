@@ -9,18 +9,20 @@ import shutil
 command = sys.argv[1] if len(sys.argv) >= 2 else ""
 is_build = command.startswith("build") or command.startswith("install") or command.startswith("bdist")
 
+version="3.0.3"
+
 if sys.platform == "win32":
     package_data = {"glfw": ["glfw.dll"]}
     
     # pre-built
-    shutil.copyfile("glfw-2.7.5/lib/win32/glfw.dll", "glfw/glfw.dll")
+    shutil.copyfile("glfw-{}/lib/win32/glfw.dll".format(version), "glfw/glfw.dll")
     
 elif sys.platform == "darwin":
     package_data = {"glfw": ["libglfw.dylib"]}
     
     if not os.path.exists("glfw/libglfw.dylib") and is_build:
         # let's cross our fingers and hope the build goes smooth (without user intervention)
-        os.chdir("glfw-2.7.5")
+        os.chdir("glfw-{}".format(version))
         
         if os.system("make cocoa"):
             print("Error while building libglfw.dylib")
@@ -28,13 +30,13 @@ elif sys.platform == "darwin":
             
         os.chdir("..")
             
-    shutil.copyfile("glfw-2.7.5/lib/cocoa/libglfw.dylib", "glfw/libglfw.dylib")
+    shutil.copyfile("glfw-{}/lib/cocoa/libglfw.dylib".format(version), "glfw/libglfw.dylib")
         
 else:
     package_data = {"glfw": ["libglfw.so"]}
     
     if not os.path.exists("glfw/libglfw.so") and is_build:
-        os.chdir("glfw-2.7.5")
+        os.chdir("glfw-{}".format(version))
         
         if os.system("make x11"):
             print("Error while building libglfw.so")
@@ -42,7 +44,7 @@ else:
             
         os.chdir("..")
         
-    shutil.copyfile("glfw-2.7.5/lib/x11/libglfw.so", "glfw/libglfw.so")
+    shutil.copyfile("glfw-{}/lib/x11/libglfw.so".format(version), "glfw/libglfw.so")
 
 
 setup_info = {
